@@ -1,10 +1,8 @@
+// /Users/habin/workspace/automouse/main.go
 package main
 
-import (
-	_ "github.com/go-vgo/robotgo"
-	_ "github.com/spf13/cobra"
-)
+import "github.com/habin/automouse/cmd"
 
 func main() {
-	// TODO: Implement CLI
+	cmd.Execute()
 }
