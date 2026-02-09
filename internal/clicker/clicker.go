@@ -1,4 +1,3 @@
-// /Users/habin/workspace/automouse/internal/clicker/clicker.go
 package clicker
 
 import (
@@ -11,30 +10,39 @@ import (
 )
 
 type clickFn func(x, y int)
+type getPosFn func() (int, int)
 
 func defaultClick(x, y int) {
 	robotgo.Move(x, y)
 	robotgo.Click("left")
 }
 
+func defaultGetPos() (int, int) {
+	return robotgo.Location()
+}
+
 type Clicker struct {
-	X        int
-	Y        int
-	Interval time.Duration
+	X             int
+	Y             int
+	Interval      time.Duration
+	UseCurrentPos bool
 
 	running   atomic.Bool
 	clickFunc clickFn
+	getPosFunc getPosFn
 }
 
-func New(x, y int, interval time.Duration) *Clicker {
+func New(x, y int, interval time.Duration, useCurrentPos bool) *Clicker {
 	if interval <= 0 {
 		interval = 1000 * time.Millisecond
 	}
 	return &Clicker{
-		X:         x,
-		Y:         y,
-		Interval:  interval,
-		clickFunc: defaultClick,
+		X:             x,
+		Y:             y,
+		Interval:      interval,
+		UseCurrentPos: useCurrentPos,
+		clickFunc:     defaultClick,
+		getPosFunc:    defaultGetPos,
 	}
 }
 
@@ -46,8 +54,12 @@ func (c *Clicker) Run(ctx context.Context, toggleCh <-chan struct{}) {
 	ticker := time.NewTicker(c.Interval)
 	defer ticker.Stop()
 
-	fmt.Printf("Auto-clicker ready at (%d, %d) with %v interval\n", c.X, c.Y, c.Interval)
-	fmt.Println("Press Enter to start/stop clicking. Press Ctrl+C to exit.")
+	if c.UseCurrentPos {
+		fmt.Printf("Auto-clicker ready at CURRENT MOUSE POSITION with %v interval\n", c.Interval)
+	} else {
+		fmt.Printf("Auto-clicker ready at (%d, %d) with %v interval\n", c.X, c.Y, c.Interval)
+	}
+	fmt.Println("Press Enter to start/stop clicking. Press ESC or Ctrl+C to exit.")
 
 	for {
 		select {
@@ -66,7 +78,12 @@ func (c *Clicker) Run(ctx context.Context, toggleCh <-chan struct{}) {
 
 		case <-ticker.C:
 			if c.running.Load() {
-				c.clickFunc(c.X, c.Y)
+				if c.UseCurrentPos {
+					x, y := c.getPosFunc()
+					c.clickFunc(x, y)
+				} else {
+					c.clickFunc(c.X, c.Y)
+				}
 			}
 		}
 	}

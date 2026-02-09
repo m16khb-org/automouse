@@ -4,6 +4,7 @@ go 1.24.5
 
 require (
 	github.com/go-vgo/robotgo v1.0.0
+	github.com/robotn/gohook v0.42.3
 	github.com/spf13/cobra v1.10.2
 )
 
